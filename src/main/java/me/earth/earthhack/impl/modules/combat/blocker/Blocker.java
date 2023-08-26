@@ -143,4 +143,35 @@ public class Blocker extends ObbyListenerModule<ListenerObsidian> {
         Touch
     }
 
+
+    @Override
+    public String getDisplayInfo() {
+        StringBuilder displayInfo = new StringBuilder();
+
+        if (fullExtend.getValue() && hole.getValue() && face.getValue() && antiCev.getValue()) {
+            displayInfo.append("\u00A7aProtection");
+        }
+        if (fullExtend.getValue()) {
+            displayInfo.append("\u00A7aFull+");
+        }
+        if (!fullExtend.getValue()) {
+            if (antiCev.getValue()) {
+                displayInfo.append("AntiCev+");
+            }
+            if (face.getValue()) {
+                displayInfo.append("AntiCiv+");
+            }
+
+            if (hole.getValue()) {
+                displayInfo.append("Hole+");
+            }
+        }
+
+        if (displayInfo.length() > 0) {
+            displayInfo.deleteCharAt(displayInfo.length() - 1);
+            return displayInfo.toString();
+        } else {
+            return "Basic";
+        }
+    }
 }

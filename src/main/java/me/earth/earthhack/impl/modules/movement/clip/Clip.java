@@ -8,7 +8,6 @@ import me.earth.earthhack.api.setting.settings.EnumSetting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.event.events.misc.UpdateEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
-import me.earth.earthhack.impl.modules.misc.logger.Logger;
 import me.earth.earthhack.impl.util.minecraft.MovementUtil;
 import me.earth.earthhack.impl.util.network.NetworkUtil;
 import net.minecraft.util.math.BlockPos;
@@ -103,4 +102,19 @@ public class Clip extends Module {
     {
         disableTime = 0;
     }
+
+@Override
+public String getDisplayInfo() {
+        StringBuilder displayInfo = new StringBuilder();
+
+        if (delay.getValue() != null) {
+        displayInfo.append("Delay: ").append(delay.getValue()).append(" ");
+        }
+
+        if (updates.getValue() != null) {
+        displayInfo.append("Updates: ").append(updates.getValue());
+        }
+
+        return displayInfo.toString();
+        }
 }
