@@ -94,5 +94,5 @@ This is just what the docker container already automates.
     * List the downloaded versions with `versions -refresh`.
     * Launch the game with `launch <id of the forge version> -id`.
 
-9.  You are now done with the server. Just follow the steps after 7. in the docker setup.
+9.  You are now done with the server. Just follow the steps after 7. in the docker setup.ok
 </details>
