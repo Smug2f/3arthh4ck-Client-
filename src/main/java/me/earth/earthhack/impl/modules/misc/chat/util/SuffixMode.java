@@ -4,10 +4,14 @@ public enum SuffixMode {
     Earth,
     CuteEarth,
     Phobos,
+    Noxilon,
     Rusher,
     Future,
     Konas,
+    Lemon,
     GameSense,
+    Pyro,
+    OctoHack,
     KamiBlue,
     Custom
 }

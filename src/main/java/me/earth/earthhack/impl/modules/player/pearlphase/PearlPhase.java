@@ -3,6 +3,7 @@ package me.earth.earthhack.impl.modules.player.pearlphase;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.BooleanSetting;
+import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.util.client.ModuleUtil;
 import me.earth.earthhack.impl.util.client.SimpleData;
 import me.earth.earthhack.impl.util.helpers.disabling.DisablingModule;
@@ -23,7 +24,7 @@ import net.minecraft.util.math.BlockPos;
 public class PearlPhase extends DisablingModule
 {
 
-
+    protected final Setting<Float> pitch = register(new NumberSetting<>("Pitch", 80f, -90f, 90f));
     protected final Setting<Boolean> bypass =
             register(new BooleanSetting("Bypass", true));
 
@@ -59,9 +60,7 @@ public class PearlPhase extends DisablingModule
                     int lastSlot = mc.player.inventory.currentItem;
 
                     float aimYaw = mc.player.rotationYaw;
-                    float aimPitch = 80;
-
-
+                    float aimPitch = pitch.getValue();
 
                     if (bypass.getValue()) {
                         InventoryUtil.switchTo(slot2);

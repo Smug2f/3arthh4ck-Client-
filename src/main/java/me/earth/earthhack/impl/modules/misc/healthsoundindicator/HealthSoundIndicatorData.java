@@ -7,7 +7,11 @@ final class HealthSoundIndicatorData extends DefaultData<HealthSoundIndicator>
     public HealthSoundIndicatorData (HealthSoundIndicator module)
     {
         super(module);
-        register(module.health, "At wich number of hearths the sound will trigger");
+        register(module.health, "When lower than x health it will send a msg");
+        register(module.delay, "The amount of time to wait to send another message");
+        register(module.broadCast, "broadCast:On = everyo-ne BroadCast:off = only you");
+        register(module.tellFriends, "Will tell your friends about your life choice (if you have)");
+        register(module.showCoords, "Will also tell your coords.");
     }
 
     @Override
@@ -19,7 +23,7 @@ final class HealthSoundIndicatorData extends DefaultData<HealthSoundIndicator>
     @Override
     public String getDescription()
     {
-        return "Will play a sound when you run low on heart";
+        return "Will say your coords or play a sound when low on health (WIP)";
 
     }
 

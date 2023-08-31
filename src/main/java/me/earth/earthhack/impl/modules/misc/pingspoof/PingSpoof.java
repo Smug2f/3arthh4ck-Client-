@@ -26,7 +26,7 @@ public class PingSpoof extends Module
     private final ScheduledExecutorService service;
 
     protected final Setting<Integer> delay =
-            register(new NumberSetting<>("Delay", 100, 1, 5000));
+            register(new NumberSetting<>("Delay", 100, 1, 100000));
     protected final Setting<Boolean> keepAlive =
             register(new BooleanSetting("KeepAlive", true));
     protected final Setting<Boolean> transactions =

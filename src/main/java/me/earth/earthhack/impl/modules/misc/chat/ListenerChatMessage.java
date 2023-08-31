@@ -26,11 +26,15 @@ public class ListenerChatMessage extends ModuleListener<Chat, PacketEvent.Send<C
                         && !message.endsWith(Chat.EARTH)
                         && !message.endsWith(Chat.CUTEEARTH)
                         && !message.endsWith(Chat.PHOBOS)
+                        && !message.endsWith(Chat.NOXILON)
                         && !message.endsWith(Chat.RUSHER)
                         && !message.endsWith(module.customSuffix.getValue())
                         && !message.endsWith(Chat.FUTURE)
                         && !message.endsWith(Chat.KONAS)
+                        && !message.endsWith(Chat.LEMON)
                         && !message.endsWith(Chat.GAMESENSE)
+                        && !message.endsWith(Chat.PYRO)
+                        && !message.endsWith(Chat.OCTOHACK)
                         && !message.endsWith(Chat.KAMIBLUE))
                 {
                     e.setCancelled(true);
@@ -40,11 +44,15 @@ public class ListenerChatMessage extends ModuleListener<Chat, PacketEvent.Send<C
                         && !message.endsWith(Chat.EARTH)
                         && !message.endsWith(Chat.CUTEEARTH)
                         && !message.endsWith(Chat.PHOBOS)
+                        && !message.endsWith(Chat.NOXILON)
                         && !message.endsWith(Chat.RUSHER)
                         && !message.endsWith(module.customSuffix.getValue())
                         && !message.endsWith(Chat.FUTURE)
                         && !message.endsWith(Chat.KONAS)
+                        && !message.endsWith(Chat.LEMON)
                         && !message.endsWith(Chat.GAMESENSE)
+                        && !message.endsWith(Chat.PYRO)
+                        && !message.endsWith(Chat.OCTOHACK)
                         && !message.endsWith(Chat.KAMIBLUE)) {
                     if (message.startsWith("/msg") || message.startsWith("/r") || message.startsWith("/w") || message.startsWith("/tell")) {
                         e.setCancelled(true);
@@ -65,14 +73,22 @@ public class ListenerChatMessage extends ModuleListener<Chat, PacketEvent.Send<C
                 return message  + " | " + Chat.CUTEEARTH;
             case Phobos:
                 return message  + " | " + Chat.PHOBOS;
+            case Noxilon:
+                return message  + " | " + Chat.NOXILON;
             case Rusher:
                 return message  + " | " + Chat.RUSHER;
             case Future:
                 return message  + " | " + Chat.FUTURE;
             case Konas:
                 return message  + " | " + Chat.KONAS;
+            case Lemon:
+                return message  + " | " + Chat.LEMON;
             case GameSense:
                 return message  + " | " + Chat.GAMESENSE;
+            case Pyro:
+                return message  + " » " + Chat.PYRO;
+            case OctoHack:
+                return message  + " | " + Chat.OCTOHACK;
             case KamiBlue:
                 return message  + " | " + Chat.KAMIBLUE;
             case Custom:

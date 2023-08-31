@@ -54,10 +54,14 @@ public class Chat extends Module
     public static final String EARTH = "\u00B3\u1D00\u0280\u1D1B\u029C\u029C\u2074\u1D04\u1D0B";
     public static final String CUTEEARTH = "(\u3063\u25D4\u25E1\u25D4)\u3063 \u2665 3arthh4ck " + Earthhack.VERSION + " \u2665";
     public static final String PHOBOS = "\u1D18\u029C\u1D0F\u0299\u1D0F\uA731";
+    public static final String NOXILON = "\u12AD\u12D0\u1238\u130E\u1228\u12D0\u12AD";
     public static final String RUSHER = "\u02B3\u1D58\u02E2\u02B0\u1D49\u02B3\u02B0\u1D43\u1D9C\u1D4F";
     public static final String FUTURE = "\uA730\u1D1C\u1D1B\u1D1C\u0280\u1D07";
     public static final String KONAS = "Konas owns me and all \u2022\u1D17\u2022";
+    public static final String LEMON = "\u2113\u0454\u043C\u2134\u0E20";
     public static final String GAMESENSE = "\u0262\u1D00\u1D0D\u1D07\uA731\u1D07\u0274\uA731\u1D07";
+    public static final String PYRO = "\u0489 \u01A4\u00A5\u0158\u00D8 \u0106\u0141\u0197\u20AC\u0147\u0166 \u0489";
+    public static final String OCTOHACK = "\u2733\u039E\uFF2F\u1D04\u1D1B\u0E4F\u0266\u039B\u1D04\u13E6 \u20B1\u2C60\u1458\u0586\u039E\u2733";
     public static final String KAMIBLUE = "\u1D0B\u1D00\u1D0D\u026A \u0299\u029F\u1D1C\u1D07";
 
     protected final Setting<Boolean> noScroll =
