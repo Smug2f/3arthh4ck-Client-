@@ -5,14 +5,12 @@ import me.earth.earthhack.impl.event.events.misc.TickEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
 import me.earth.earthhack.impl.managers.Managers;
 import me.earth.earthhack.impl.util.text.ChatIDs;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextFormatting;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.BooleanSetting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
 
-import java.util.Objects;
 
 /**
  * HealthSoundIndicator module by Smug2.
@@ -33,10 +31,8 @@ public class HealthSoundIndicator extends Module {
             register(new BooleanSetting("BroadCast", false));
     protected final Setting<Boolean> tellFriends =
             register(new BooleanSetting("Tell-Friends", false));
-    /*protected final Setting<Boolean> showHealth =
+    protected final Setting<Boolean> showHealth =
             register(new BooleanSetting("Show-Health", true));
-    protected final Setting<Boolean> showDimension =
-            register(new BooleanSetting("Show-Dimension", true));*/
     protected final Setting<Boolean> showCoords =
             register(new BooleanSetting("Show-Coords", true));
 
@@ -46,34 +42,29 @@ public class HealthSoundIndicator extends Module {
         this.listeners.add(new LambdaListener<>(TickEvent.class, e -> {
             if (e.isSafe()) {
                 int currentHealth = (int) mc.player.getHealth();
+                String coords = "!";
 
-                if (currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
+                if (showCoords.getValue()) {
+                    coords = String.format(" at coordinates: X %.1f, Y %.1f, Z %.1f!",
+                            mc.player.posX,
+                            mc.player.posY,
+                            mc.player.posZ);
+                }
 
-                    String coords = "!";
-
-                    if (showCoords.getValue()) {
-                        coords = String.format(" at coordinates: X %.1f, Y %.1f, Z %.1f!",
-                                mc.player.posX,
-                                mc.player.posY,
-                                mc.player.posZ);
-                    }
-
-                    sendMessage("I got low health" + coords);
-
-                    if (tellFriends.getValue()) {
-                        for (String friend : Managers.FRIENDS.getPlayers()) {
-                            for (EntityPlayer loadedPlayer : mc.world.playerEntities) {
-                                if (Objects.equals(friend, loadedPlayer.getName())) {
-                                    mc.player.sendChatMessage("/msg "
-                                            + friend
-                                            + " I got low health "
-                                            + coords);
-                                }
-                            }
+                if (showHealth.getValue() && showCoords.getValue() && currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
+                    sendMessage("I got " + currentHealth + coords);
+                } else {
+                    if (!showHealth.getValue() && currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
+                        if (showCoords.getValue()) {
+                            sendMessage("I got low health" + coords);
+                        } else {
+                            sendMessage("I got low health.");
                         }
+                        lastMessageTime = System.currentTimeMillis();
+                    } else if (showHealth.getValue() && currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
+                        sendMessage("My current health is " + currentHealth + ".");
+                        lastMessageTime = System.currentTimeMillis();
                     }
-
-                    lastMessageTime = System.currentTimeMillis();
                 }
             }
         }));
@@ -84,7 +75,6 @@ public class HealthSoundIndicator extends Module {
         if (mc.world == null || mc.player == null)
             toggle();
     }
-
     @Override
     public String getDisplayInfo() {
         int currentHealth = (int) mc.player.getHealth();
