@@ -9,9 +9,12 @@ final class HealthSoundIndicatorData extends DefaultData<HealthSoundIndicator>
         super(module);
         register(module.health, "When lower than x health it will send a msg");
         register(module.delay, "The amount of time to wait to send another message");
-        register(module.broadCast, "broadCast:On = everyo-ne BroadCast:off = only you");
+        register(module.friendDelay, "The amount of time to wait to send another message if tellfriends is enabled");
+        register(module.broadCast, "broadCast:On = everyone BroadCast:off = only you");
         register(module.tellFriends, "Will tell your friends about your life choice (if you have)");
+        register(module.showHealth, "Will tell your health.");
         register(module.showCoords, "Will also tell your coords.");
+        register(module.showDimension, "Tell in wich dimension you're in.");
     }
 
     @Override
