@@ -56,6 +56,7 @@ public class HealthSoundIndicator extends Module {
 
                 if (showHealth.getValue() && showCoords.getValue() && currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
                     sendMessage("I got " + currentHealth + coords);
+                    lastMessageTime = System.currentTimeMillis();
                 } else {
                     if (!showHealth.getValue() && currentHealth <= health.getValue() && System.currentTimeMillis() - lastMessageTime >= delay.getValue()) {
                         if (showCoords.getValue()) {
@@ -78,9 +79,11 @@ public class HealthSoundIndicator extends Module {
                                                 + friend
                                                 + " I got low health "
                                                 + coords);
+                                        lastMessageTime = System.currentTimeMillis();
 
 
-                            }
+
+                                    }
                         }
                     }
 
