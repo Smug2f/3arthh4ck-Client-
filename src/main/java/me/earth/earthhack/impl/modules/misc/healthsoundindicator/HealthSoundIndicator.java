@@ -5,11 +5,14 @@ import me.earth.earthhack.impl.event.events.misc.TickEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
 import me.earth.earthhack.impl.managers.Managers;
 import me.earth.earthhack.impl.util.text.ChatIDs;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextFormatting;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.BooleanSetting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
+
+import java.util.Objects;
 
 
 /**
@@ -65,11 +68,29 @@ public class HealthSoundIndicator extends Module {
                         sendMessage("My current health is " + currentHealth + ".");
                         lastMessageTime = System.currentTimeMillis();
                     }
-                }
-            }
-        }));
-    }
+                    if (tellFriends.getValue()) {
+                        String ownName = mc.player.getName();
+                        for (String friend : Managers.FRIENDS.getPlayers()) {
+                            if (!Objects.equals(friend, ownName)) {
+                                for (EntityPlayer loadedPlayer : mc.world.playerEntities) {
+                                    if (Objects.equals(friend, loadedPlayer.getName())) {
+                                        mc.player.sendChatMessage("/msg "
+                                                + friend
+                                                + " I got low health "
+                                                + coords);
 
+
+                            }
+                        }
+                    }
+
+                }
+
+                        }
+                    }
+                }
+            }));
+        }
     @Override
     protected void onEnable() {
         if (mc.world == null || mc.player == null)
