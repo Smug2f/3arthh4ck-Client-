@@ -18,7 +18,6 @@ final class ListenerTick extends ModuleListener<Fullbright, TickEvent> {
             switch (module.mode.getValue()) {
                 case Gamma:
                     mc.gameSettings.gammaSetting = 1000.0f;
-                    mc.player.removePotionEffect(MobEffects.NIGHT_VISION);
                     break;
                 case Potion:
                     mc.gameSettings.gammaSetting = 1.0f;
@@ -28,11 +27,15 @@ final class ListenerTick extends ModuleListener<Fullbright, TickEvent> {
                 case Auto:
                     BlockPos playerPos = new BlockPos(mc.player.posX, mc.player.posY, mc.player.posZ);
                     int lightLevel = mc.world.getLightFor(EnumSkyBlock.BLOCK, playerPos);
+                    mc.player.removePotionEffect(MobEffects.NIGHT_VISION);
                     if (lightLevel > 7) {
                         mc.gameSettings.gammaSetting = 1.0f;
                     } else {
                         mc.gameSettings.gammaSetting = 1000.0f;
                     }
+                    break;
+                case Luminance:
+                    mc.gameSettings.gammaSetting = module.luminance.getValue();
                     break;
             }
         }

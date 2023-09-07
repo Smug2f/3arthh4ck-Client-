@@ -10,6 +10,8 @@ final class FullbrightData extends DefaultData<Fullbright>
         register(module.mode, "-Gamma make the mc gamma 1000\n" +
                 "-Potion use night vision\n" +
                 "-Auto if light level above 7 then use normal minecraft light");
+        register(module.luminance, "A slider for the luminance case\n" +
+                "15 = minecraft maximum light level.");
     }
 
     @Override

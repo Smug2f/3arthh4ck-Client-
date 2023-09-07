@@ -4,6 +4,7 @@ import me.earth.earthhack.api.module.Module;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.EnumSetting;
+import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.modules.render.fullbright.mode.BrightMode;
 import net.minecraft.init.MobEffects;
 
@@ -11,6 +12,8 @@ public class Fullbright extends Module
 {
     protected final Setting<BrightMode> mode =
             register(new EnumSetting<>("Mode", BrightMode.Gamma));
+    protected final Setting<Integer> luminance  =
+            register(new NumberSetting<>("Luminance", 7, 1, 15));
     public Fullbright()
     {
         super("Fullbright", Category.Render);
