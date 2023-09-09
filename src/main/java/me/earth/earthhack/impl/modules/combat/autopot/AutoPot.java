@@ -6,7 +6,9 @@ import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.event.events.misc.TickEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
+import net.minecraft.block.Block;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemSplashPotion;
 import net.minecraft.item.ItemStack;
@@ -14,6 +16,8 @@ import net.minecraft.network.play.client.CPacketPlayer;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.potion.PotionUtils;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,7 +30,8 @@ public class AutoPot extends Module {
     protected final Setting<Integer> healthDelay = register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
 
     private int lastSlot = -1;
-    private long lastThrowTime = 0;
+    private long lastSpeedThrowTime = 0;
+    private long lastHealthThrowTime = 0;
 
     public AutoPot() {
         super("AutoPot", Category.Combat);
@@ -60,28 +65,35 @@ public class AutoPot extends Module {
     }
 
     private void handleSpeedPotion() {
-        if (System.currentTimeMillis() - lastThrowTime < speedDelay.getValue()) {
+        if (System.currentTimeMillis() - lastSpeedThrowTime < speedDelay.getValue()) {
             return;
         }
 
-        if (isEnemyInRange(enemyRange.getValue())) {
-            int slot = findSpeedSplashPotion();
-            if (slot != -1) {
-                throwPotion(slot);
-                lastThrowTime = System.currentTimeMillis();
+        int slot = findSpeedSplashPotion();
+        if (slot != -1) {
+            float pitch;
+            if (!hasSolidBlocksBelowPlayer()) {
+                pitch = -90f; // Always throw at -90 pitch if not on solid ground
+            } else if (!isEnemyInRange(enemyRange.getValue()) || isBelowMovementThreshold()) {
+                pitch = noEnemyP.getValue(); // Both conditions met, throw at Noennemy pitch
+            } else {
+                pitch = 90f; // Either one or none conditions are met, throw at 90 pitch (onground)
             }
-        } else if (isBelowMovementThreshold()) {
-            throwPotionWithPitch(noEnemyP.getValue());
+
+            mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
+            throwPotion(slot);
+            lastSpeedThrowTime = System.currentTimeMillis();
         }
     }
 
     private void handleHealthPotion() {
         int currentHealth = (int) mc.player.getHealth();
-        if (currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastThrowTime >= healthDelay.getValue()) {
+        if (currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastHealthThrowTime >= healthDelay.getValue() && hasSolidBlocksBelowPlayer()) {
             int healthSlot = findHealthSplashPotion();
             if (healthSlot != -1) {
+                mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, 90f, mc.player.onGround)); // Always throw at 90 pitch for heal
                 throwPotion(healthSlot);
-                lastThrowTime = System.currentTimeMillis();
+                lastHealthThrowTime = System.currentTimeMillis();
             }
         }
     }
@@ -95,6 +107,22 @@ public class AutoPot extends Module {
         double movementThreshold = mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue();
         double playerMotion = mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ;
         return playerMotion <= movementThreshold * movementThreshold;
+    }
+
+    private boolean hasSolidBlocksBelowPlayer() {
+        int playerX = MathHelper.floor(mc.player.posX);
+        int playerZ = MathHelper.floor(mc.player.posZ);
+
+        int playerY = MathHelper.floor(mc.player.getEntityBoundingBox().minY);
+
+        // Check for solid blocks at y-1 and y-2
+        for (int y = playerY - 1; y >= playerY - 2; y--) {
+            Block block = mc.world.getBlockState(new BlockPos(playerX, y, playerZ)).getBlock();
+            if (block != Blocks.AIR && block != Blocks.WATER && block != Blocks.LAVA) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private int findSpeedSplashPotion() {
@@ -132,13 +160,5 @@ public class AutoPot extends Module {
         mc.player.inventory.currentItem = slot;
         mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
         mc.player.inventory.currentItem = lastSlot;
-    }
-
-    private void throwPotionWithPitch(float pitch) {
-        int slot = findSpeedSplashPotion();
-        if (slot != -1) {
-            throwPotion(slot);
-            mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
-        }
     }
 }
