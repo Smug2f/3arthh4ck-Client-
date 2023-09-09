@@ -19,6 +19,7 @@ public class ConfigManager extends AbstractRegister<ConfigHelper<?>>
     {
         super(new LinkedHashMap<>());
         this.registered.put("macro",  new MacroConfigHelper(Managers.MACRO));
+        this.registered.put("hud",    new HudConfigHelper(Managers.ELEMENTS));
         this.registered.put("friend", new FriendConfigHelper());
         this.registered.put("enemy",  new EnemyConfigHelper());
 
@@ -64,21 +65,21 @@ public class ConfigManager extends AbstractRegister<ConfigHelper<?>>
     public void save(ConfigHelper<?> helper, String...args) throws IOException
     {
         Earthhack.getLogger().info("Config: saving " + helper.getName() + " "
-                                    + Arrays.toString(args));
+                + Arrays.toString(args));
         execute(helper, ConfigHelper::save, ConfigHelper::save, args);
     }
 
     public void load(ConfigHelper<?> helper, String...args) throws IOException
     {
         Earthhack.getLogger().info("Config: loading " + helper.getName() + " "
-                                    + Arrays.toString(args));
+                + Arrays.toString(args));
         execute(helper, h -> {}, ConfigHelper::load, args);
     }
 
     public void refresh(ConfigHelper<?> helper, String...args) throws IOException
     {
         Earthhack.getLogger().info("Config: refreshing " + helper.getName()
-                                    + " " + Arrays.toString(args));
+                + " " + Arrays.toString(args));
         execute(helper, ConfigHelper::refresh, ConfigHelper::refresh, args);
     }
 

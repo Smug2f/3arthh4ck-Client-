@@ -14,39 +14,24 @@ import net.minecraft.network.play.client.CPacketPlayer;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.potion.PotionUtils;
 import net.minecraft.util.EnumHand;
-import net.minecraft.entity.player.EntityPlayer;
 
 import java.util.List;
 import java.util.Objects;
 
 public class AutoPot extends Module {
     protected final Setting<Integer> speedDelay = register(new NumberSetting<>("SpeedDelay", 2500, 1, 5000));
-    protected final Setting<Float> EnnemyRange = register(new NumberSetting<>("EnnemyRange", 6.0f, 0.1f, 10.0f));
-    protected final Setting<Float> NoEnnemyP = register(new NumberSetting<>("NoEnnemy P", 80f, -90f, 90f));
+    protected final Setting<Float> enemyRange = register(new NumberSetting<>("EnemyRange", 6.0f, 0.1f, 10.0f));
+    protected final Setting<Float> noEnemyP = register(new NumberSetting<>("NoEnemyP", 80f, -90f, 90f));
+    protected final Setting<Integer> healthPotThreshold = register(new NumberSetting<>("HealthThreshold", 15, 1, 19));
+    protected final Setting<Integer> healthDelay = register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
+
     private int lastSlot = -1;
     private long lastThrowTime = 0;
 
     public AutoPot() {
         super("AutoPot", Category.Combat);
         setData(new AutoPotData(this));
-        this.listeners.add(new LambdaListener<>(TickEvent.class, e -> {
-            if (!mc.player.isPotionActive(MobEffects.SPEED)) {
-                if (System.currentTimeMillis() - lastThrowTime >= speedDelay.getValue()) {
-                    if (isEnemyInRange(EnnemyRange.getValue())) {
-                        int slot = findSpeedSplashPotion();
-                        if (slot != -1) {
-                            lastSlot = mc.player.inventory.currentItem;
-                            mc.player.inventory.currentItem = slot;
-                            mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
-                            mc.player.inventory.currentItem = lastSlot;
-                            lastThrowTime = System.currentTimeMillis();
-                        }
-                    } else if (mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ <= mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue() * mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getAttributeValue()) {
-                        throwPotionWithPitch(NoEnnemyP.getValue());
-                    }
-                }
-            }
-        }));
+        this.listeners.add(new LambdaListener<>(TickEvent.class, this::onTick));
     }
 
     @Override
@@ -59,21 +44,57 @@ public class AutoPot extends Module {
     @Override
     public String getDisplayInfo() {
         if (!mc.player.isPotionActive(MobEffects.SPEED)) {
-            int currentHealth = (int) mc.player.getHealth();
-            return "Health: " + currentHealth;
+            return "Health: " + (int) mc.player.getHealth();
         } else {
             int remainingTime = Objects.requireNonNull(mc.player.getActivePotionEffect(MobEffects.SPEED)).getDuration();
             return "\u00A7bSpeed: " + (remainingTime / 20) + "s";
         }
     }
 
-    private boolean isEnemyInRange(float range) {
-        for (EntityPlayer player : mc.world.playerEntities) {
-            if (player != mc.player && mc.player.getDistance(player) <= range) {
-                return true;
+    private void onTick(TickEvent event) {
+        if (!mc.player.isPotionActive(MobEffects.SPEED)) {
+            handleSpeedPotion();
+        }
+
+        handleHealthPotion();
+    }
+
+    private void handleSpeedPotion() {
+        if (System.currentTimeMillis() - lastThrowTime < speedDelay.getValue()) {
+            return;
+        }
+
+        if (isEnemyInRange(enemyRange.getValue())) {
+            int slot = findSpeedSplashPotion();
+            if (slot != -1) {
+                throwPotion(slot);
+                lastThrowTime = System.currentTimeMillis();
+            }
+        } else if (isBelowMovementThreshold()) {
+            throwPotionWithPitch(noEnemyP.getValue());
+        }
+    }
+
+    private void handleHealthPotion() {
+        int currentHealth = (int) mc.player.getHealth();
+        if (currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastThrowTime >= healthDelay.getValue()) {
+            int healthSlot = findHealthSplashPotion();
+            if (healthSlot != -1) {
+                throwPotion(healthSlot);
+                lastThrowTime = System.currentTimeMillis();
             }
         }
-        return false;
+    }
+
+    private boolean isEnemyInRange(float range) {
+        return mc.world.playerEntities.stream()
+                .anyMatch(player -> player != mc.player && mc.player.getDistance(player) <= range);
+    }
+
+    private boolean isBelowMovementThreshold() {
+        double movementThreshold = mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue();
+        double playerMotion = mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ;
+        return playerMotion <= movementThreshold * movementThreshold;
     }
 
     private int findSpeedSplashPotion() {
@@ -83,24 +104,40 @@ public class AutoPot extends Module {
             if (stackInSlot.getItem() instanceof ItemSplashPotion) {
                 List<PotionEffect> effects = PotionUtils.getEffectsFromStack(stackInSlot);
 
-                for (PotionEffect effect : effects) {
-                    if (effect.getPotion() == MobEffects.SPEED) {
-                        return i;
-                    }
+                if (effects.stream().anyMatch(effect -> effect.getPotion() == MobEffects.SPEED)) {
+                    return i;
                 }
             }
         }
         return -1;
     }
 
+    private int findHealthSplashPotion() {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stackInSlot = mc.player.inventory.getStackInSlot(i);
+
+            if (stackInSlot.getItem() instanceof ItemSplashPotion) {
+                List<PotionEffect> effects = PotionUtils.getEffectsFromStack(stackInSlot);
+
+                if (effects.stream().anyMatch(effect -> effect.getPotion() == MobEffects.INSTANT_HEALTH)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void throwPotion(int slot) {
+        lastSlot = mc.player.inventory.currentItem;
+        mc.player.inventory.currentItem = slot;
+        mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
+        mc.player.inventory.currentItem = lastSlot;
+    }
+
     private void throwPotionWithPitch(float pitch) {
         int slot = findSpeedSplashPotion();
         if (slot != -1) {
-            lastSlot = mc.player.inventory.currentItem;
-            mc.player.inventory.currentItem = slot;
-            mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
-            mc.player.inventory.currentItem = lastSlot;
-            lastThrowTime = System.currentTimeMillis();
+            throwPotion(slot);
             mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
         }
     }
