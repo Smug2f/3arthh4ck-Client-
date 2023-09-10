@@ -100,6 +100,7 @@ import me.earth.earthhack.impl.modules.movement.entitycontrol.EntityControl;
 import me.earth.earthhack.impl.modules.movement.entityspeed.EntitySpeed;
 import me.earth.earthhack.impl.modules.movement.fastswim.FastSwim;
 import me.earth.earthhack.impl.modules.movement.flight.Flight;
+import me.earth.earthhack.impl.modules.movement.headhitter.HeadHitter;
 import me.earth.earthhack.impl.modules.movement.highjump.HighJump;
 import me.earth.earthhack.impl.modules.movement.hitboxdesync.HitboxDesync;
 import me.earth.earthhack.impl.modules.movement.icespeed.IceSpeed;
@@ -287,6 +288,7 @@ public class ModuleManager extends IterationRegister<Module>
         this.forceRegister(new EntitySpeed());
         this.forceRegister(new FastSwim());
         this.forceRegister(new Flight());
+        this.forceRegister(new HeadHitter());
         this.forceRegister(new HighJump());
         this.forceRegister(new HitboxDesync());
         this.forceRegister(new ReverseStep());

@@ -41,11 +41,12 @@ public class AutoPot extends Module {
 
     @Override
     protected void onEnable() {
-        if (mc.world == null || mc.player == null) {
-            toggle();
+        if (mc != null && mc.world != null && mc.player != null) {
+            super.onEnable(); // Call the parent onEnable method to properly enable the module
+        } else {
+            toggle(); // Disable the module if any of the required variables is null
         }
     }
-
     @Override
     public String getDisplayInfo() {
         if (!mc.player.isPotionActive(MobEffects.SPEED)) {
@@ -105,8 +106,8 @@ public class AutoPot extends Module {
 
     private boolean isBelowMovementThreshold() {
         double movementThreshold = mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue();
-        double playerMotion = mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ;
-        return playerMotion <= movementThreshold * movementThreshold;
+        double horizontalMotion = mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ;
+        return horizontalMotion <= movementThreshold * movementThreshold;
     }
 
     private boolean hasSolidBlocksBelowPlayer() {
