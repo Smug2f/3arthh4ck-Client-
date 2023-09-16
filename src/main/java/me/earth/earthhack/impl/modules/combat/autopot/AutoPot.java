@@ -3,6 +3,7 @@ package me.earth.earthhack.impl.modules.combat.autopot;
 import me.earth.earthhack.api.module.Module;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
+import me.earth.earthhack.api.setting.settings.BooleanSetting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.event.events.misc.TickEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
@@ -23,9 +24,11 @@ import java.util.List;
 import java.util.Objects;
 
 public class AutoPot extends Module {
+    protected final Setting<Boolean> speed = register(new BooleanSetting("Speed", true));
     protected final Setting<Integer> speedDelay = register(new NumberSetting<>("SpeedDelay", 2500, 1, 5000));
     protected final Setting<Float> enemyRange = register(new NumberSetting<>("EnemyRange", 6.0f, 0.1f, 10.0f));
     protected final Setting<Float> noEnemyP = register(new NumberSetting<>("NoEnemyP", 80f, -90f, 90f));
+    protected final Setting<Boolean> heal = register(new BooleanSetting("Heal", true));
     protected final Setting<Integer> healthPotThreshold = register(new NumberSetting<>("HealthThreshold", 15, 1, 19));
     protected final Setting<Integer> healthDelay = register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
 
@@ -66,30 +69,28 @@ public class AutoPot extends Module {
     }
 
     private void handleSpeedPotion() {
-        if (System.currentTimeMillis() - lastSpeedThrowTime < speedDelay.getValue()) {
-            return;
-        }
+        if (speed.getValue() && System.currentTimeMillis() - lastSpeedThrowTime >= speedDelay.getValue()) {
+            int slot = findSpeedSplashPotion();
+            if (slot != -1) {
+                float pitch;
+                if (!hasSolidBlocksBelowPlayer()) {
+                    pitch = -90f; // Always throw at -90 pitch if not on solid ground
+                } else if (!isEnemyInRange(enemyRange.getValue()) || isBelowMovementThreshold()) {
+                    pitch = noEnemyP.getValue(); // Both conditions met, throw at Noenemy pitch
+                } else {
+                    pitch = 90f; // Either one or none conditions are met, throw at 90 pitch (onground)
+                }
 
-        int slot = findSpeedSplashPotion();
-        if (slot != -1) {
-            float pitch;
-            if (!hasSolidBlocksBelowPlayer()) {
-                pitch = -90f; // Always throw at -90 pitch if not on solid ground
-            } else if (!isEnemyInRange(enemyRange.getValue()) || isBelowMovementThreshold()) {
-                pitch = noEnemyP.getValue(); // Both conditions met, throw at Noennemy pitch
-            } else {
-                pitch = 90f; // Either one or none conditions are met, throw at 90 pitch (onground)
+                mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
+                throwPotion(slot);
+                lastSpeedThrowTime = System.currentTimeMillis();
             }
-
-            mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
-            throwPotion(slot);
-            lastSpeedThrowTime = System.currentTimeMillis();
         }
     }
 
     private void handleHealthPotion() {
         int currentHealth = (int) mc.player.getHealth();
-        if (currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastHealthThrowTime >= healthDelay.getValue() && hasSolidBlocksBelowPlayer()) {
+        if (heal.getValue() && currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastHealthThrowTime >= healthDelay.getValue() && hasSolidBlocksBelowPlayer()) {
             int healthSlot = findHealthSplashPotion();
             if (healthSlot != -1) {
                 mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, 90f, mc.player.onGround)); // Always throw at 90 pitch for heal
