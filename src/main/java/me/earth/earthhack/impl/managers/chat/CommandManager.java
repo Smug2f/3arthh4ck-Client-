@@ -82,6 +82,7 @@ public class CommandManager extends SubscriberImpl
         commands.add(new ConfigCommand());
         commands.add(new FontCommand());
         commands.add(new FriendCommand());
+        commands.add(new FutureFriendsCommand());
         commands.add(new EnemyCommand());
         commands.add(new HelpCommand());
         commands.add(new HexCommand());
