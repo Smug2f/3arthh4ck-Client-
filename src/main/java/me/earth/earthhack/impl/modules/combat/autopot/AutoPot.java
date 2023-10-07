@@ -1,12 +1,12 @@
 package me.earth.earthhack.impl.modules.combat.autopot;
 
-import me.earth.earthhack.api.module.Module;
 import me.earth.earthhack.api.module.util.Category;
 import me.earth.earthhack.api.setting.Setting;
 import me.earth.earthhack.api.setting.settings.BooleanSetting;
 import me.earth.earthhack.api.setting.settings.NumberSetting;
-import me.earth.earthhack.impl.event.events.misc.TickEvent;
+import me.earth.earthhack.impl.event.events.misc.UpdateEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
+import me.earth.earthhack.impl.util.helpers.disabling.DisablingModule;
 import net.minecraft.block.Block;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.init.Blocks;
@@ -22,15 +22,26 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.List;
 import java.util.Objects;
+/**
+ * nice listener bud
+ * @author Smug2 , Ai_2473 .
+ */
 
-public class AutoPot extends Module {
-    protected final Setting<Boolean> speed = register(new BooleanSetting("Speed", true));
-    protected final Setting<Integer> speedDelay = register(new NumberSetting<>("SpeedDelay", 2500, 1, 5000));
-    protected final Setting<Float> enemyRange = register(new NumberSetting<>("EnemyRange", 6.0f, 0.1f, 10.0f));
-    protected final Setting<Float> noEnemyP = register(new NumberSetting<>("NoEnemyP", 80f, -90f, 90f));
-    protected final Setting<Boolean> heal = register(new BooleanSetting("Heal", true));
-    protected final Setting<Integer> healthPotThreshold = register(new NumberSetting<>("HealthThreshold", 15, 1, 19));
-    protected final Setting<Integer> healthDelay = register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
+public class AutoPot extends DisablingModule {
+    protected final Setting<Boolean> speed =
+            register(new BooleanSetting("Speed", true));
+    protected final Setting<Integer> speedDelay =
+            register(new NumberSetting<>("SpeedDelay", 2500, 1, 5000));
+    protected final Setting<Float> enemyRange =
+            register(new NumberSetting<>("EnemyRange", 6.0f, 0.1f, 10.0f));
+    protected final Setting<Float> noEnemyP =
+            register(new NumberSetting<>("NoEnemyP", 80f, -90f, 90f));
+    protected final Setting<Boolean> heal =
+            register(new BooleanSetting("Heal", true));
+    protected final Setting<Integer> healthPotThreshold =
+            register(new NumberSetting<>("HealthThreshold", 15, 1, 19));
+    protected final Setting<Integer> healthDelay =
+            register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
 
     private int lastSlot = -1;
     private long lastSpeedThrowTime = 0;
@@ -39,17 +50,19 @@ public class AutoPot extends Module {
     public AutoPot() {
         super("AutoPot", Category.Combat);
         setData(new AutoPotData(this));
-        this.listeners.add(new LambdaListener<>(TickEvent.class, this::onTick));
+        this.listeners.add(new LambdaListener<>(UpdateEvent.class, e -> {
+            if (mc.player != null && mc.world != null) {
+                if (!mc.player.isPotionActive(MobEffects.SPEED)) {
+                    handleSpeedPotion();
+                }
+
+                handleHealthPotion();
+            } else {
+                toggle();
+            }
+        }));
     }
 
-    @Override
-    protected void onEnable() {
-        if (mc != null && mc.world != null && mc.player != null) {
-            super.onEnable(); // Call the parent onEnable method to properly enable the module
-        } else {
-            toggle(); // Disable the module if any of the required variables is null
-        }
-    }
     @Override
     public String getDisplayInfo() {
         if (!mc.player.isPotionActive(MobEffects.SPEED)) {
@@ -58,14 +71,6 @@ public class AutoPot extends Module {
             int remainingTime = Objects.requireNonNull(mc.player.getActivePotionEffect(MobEffects.SPEED)).getDuration();
             return "\u00A7bSpeed: " + (remainingTime / 20) + "s";
         }
-    }
-
-    private void onTick(TickEvent event) {
-        if (!mc.player.isPotionActive(MobEffects.SPEED)) {
-            handleSpeedPotion();
-        }
-
-        handleHealthPotion();
     }
 
     private void handleSpeedPotion() {
@@ -163,4 +168,5 @@ public class AutoPot extends Module {
         mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
         mc.player.inventory.currentItem = lastSlot;
     }
+
 }

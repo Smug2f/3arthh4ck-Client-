@@ -268,5 +268,4 @@ public abstract class Module extends SettingContainer
 
         return false;
     }
-
 }
