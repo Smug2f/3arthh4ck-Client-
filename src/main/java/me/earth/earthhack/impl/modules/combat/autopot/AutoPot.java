@@ -43,7 +43,6 @@ public class AutoPot extends DisablingModule {
     protected final Setting<Integer> healthDelay =
             register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
 
-    private int lastSlot = -1;
     private long lastSpeedThrowTime = 0;
     private long lastHealthThrowTime = 0;
 
@@ -163,7 +162,7 @@ public class AutoPot extends DisablingModule {
     }
 
     private void throwPotion(int slot) {
-        lastSlot = mc.player.inventory.currentItem;
+        int lastSlot = mc.player.inventory.currentItem;
         mc.player.inventory.currentItem = slot;
         mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
         mc.player.inventory.currentItem = lastSlot;
