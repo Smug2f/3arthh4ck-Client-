@@ -7,8 +7,8 @@ import me.earth.earthhack.api.setting.settings.NumberSetting;
 import me.earth.earthhack.impl.event.events.misc.UpdateEvent;
 import me.earth.earthhack.impl.event.listeners.LambdaListener;
 import me.earth.earthhack.impl.util.helpers.disabling.DisablingModule;
+import me.earth.earthhack.impl.util.math.TickTimer;
 import net.minecraft.block.Block;
-import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemSplashPotion;
@@ -22,16 +22,12 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.List;
 import java.util.Objects;
-/**
- * nice listener bud
- * @author Smug2 , Ai_2473 .
- */
 
 public class AutoPot extends DisablingModule {
     protected final Setting<Boolean> speed =
             register(new BooleanSetting("Speed", true));
     protected final Setting<Integer> speedDelay =
-            register(new NumberSetting<>("SpeedDelay", 2500, 1, 5000));
+            register(new NumberSetting<>("SpeedDelay", 6, 0, 30));
     protected final Setting<Float> enemyRange =
             register(new NumberSetting<>("EnemyRange", 6.0f, 0.1f, 10.0f));
     protected final Setting<Float> noEnemyP =
@@ -41,25 +37,28 @@ public class AutoPot extends DisablingModule {
     protected final Setting<Integer> healthPotThreshold =
             register(new NumberSetting<>("HealthThreshold", 15, 1, 19));
     protected final Setting<Integer> healthDelay =
-            register(new NumberSetting<>("HealthDelay", 50, 1, 2000));
+            register(new NumberSetting<>("HealthDelay", 1, 0, 30));
+    protected final Setting<Integer> healSlot =
+            register(new NumberSetting<>("HealSlot", 8, 1, 9));
 
-    private long lastSpeedThrowTime = 0;
-    private long lastHealthThrowTime = 0;
+
+    private final TickTimer speedDelayTimer;
+    private final TickTimer healthDelayTimer;
 
     public AutoPot() {
         super("AutoPot", Category.Combat);
         setData(new AutoPotData(this));
         this.listeners.add(new LambdaListener<>(UpdateEvent.class, e -> {
             if (mc.player != null && mc.world != null) {
-                if (!mc.player.isPotionActive(MobEffects.SPEED)) {
-                    handleSpeedPotion();
-                }
-
+                handleSpeedPotion();
                 handleHealthPotion();
             } else {
                 toggle();
             }
         }));
+
+        speedDelayTimer = new TickTimer(speedDelay.getValue());
+        healthDelayTimer = new TickTimer(healthDelay.getValue());
     }
 
     @Override
@@ -73,33 +72,64 @@ public class AutoPot extends DisablingModule {
     }
 
     private void handleSpeedPotion() {
-        if (speed.getValue() && System.currentTimeMillis() - lastSpeedThrowTime >= speedDelay.getValue()) {
-            int slot = findSpeedSplashPotion();
-            if (slot != -1) {
-                float pitch;
-                if (!hasSolidBlocksBelowPlayer()) {
-                    pitch = -90f; // Always throw at -90 pitch if not on solid ground
-                } else if (!isEnemyInRange(enemyRange.getValue()) || isBelowMovementThreshold()) {
-                    pitch = noEnemyP.getValue(); // Both conditions met, throw at Noenemy pitch
-                } else {
-                    pitch = 90f; // Either one or none conditions are met, throw at 90 pitch (onground)
-                }
+        if (!speed.getValue() || mc.player.isPotionActive(MobEffects.SPEED)) {
+            return;
+        }
 
-                mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, pitch, mc.player.onGround));
+        if (!isEnemyInRange(enemyRange.getValue()) || hasSolidBlocksBelowPlayer()) {
+            float pitch = noEnemyP.getValue();
+            mc.player.connection.sendPacket(new CPacketPlayer.Rotation(0f, pitch, mc.player.onGround));
+            int slot = findSpeedSplashPotion();
+            if (slot != -1 && speedDelayTimer.hasReached()) {
                 throwPotion(slot);
-                lastSpeedThrowTime = System.currentTimeMillis();
+                speedDelayTimer.reset();
             }
         }
     }
 
     private void handleHealthPotion() {
         int currentHealth = (int) mc.player.getHealth();
-        if (heal.getValue() && currentHealth <= healthPotThreshold.getValue() && System.currentTimeMillis() - lastHealthThrowTime >= healthDelay.getValue() && hasSolidBlocksBelowPlayer()) {
-            int healthSlot = findHealthSplashPotion();
-            if (healthSlot != -1) {
-                mc.player.connection.sendPacket(new CPacketPlayer.Rotation(mc.player.rotationYaw, 90f, mc.player.onGround)); // Always throw at 90 pitch for heal
-                throwPotion(healthSlot);
-                lastHealthThrowTime = System.currentTimeMillis();
+        if (!heal.getValue() || currentHealth > healthPotThreshold.getValue() || hasSolidBlocksBelowPlayer()) {
+            return;
+        }
+
+        int healthSlot = findHealthSplashPotion();
+        if (healthSlot != -1 && healthDelayTimer.hasReached()) {
+            mc.player.connection.sendPacket(new CPacketPlayer.Rotation(0f, 90f, mc.player.onGround));
+            movePotionToHotbar(healthSlot);
+            throwPotion(healSlot.getValue() - 1);
+            healthDelayTimer.reset();
+        }
+    }
+
+    private final Object potionLock = new Object();
+
+    private void movePotionToHotbar(int potionSlot) {
+        if (potionSlot < 0 || potionSlot >= 9) {
+            return;
+        }
+
+        int hotbarSlot = healSlot.getValue() - 1;
+
+        if (potionSlot == hotbarSlot) {
+            return;
+        }
+
+        synchronized (potionLock) {
+            ItemStack potionStack = mc.player.inventory.getStackInSlot(potionSlot);
+
+            if (potionStack.getItem() instanceof ItemSplashPotion) {
+                ItemStack hotbarStack = mc.player.inventory.getStackInSlot(hotbarSlot);
+
+                if (hotbarStack.isEmpty()) {
+                    mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
+                    mc.playerController.processRightClick(mc.player, mc.world, EnumHand.OFF_HAND);
+                    mc.player.inventory.setInventorySlotContents(potionSlot, ItemStack.EMPTY);
+                } else {
+                    mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
+                    mc.playerController.processRightClick(mc.player, mc.world, EnumHand.OFF_HAND);
+                    mc.player.inventory.setInventorySlotContents(potionSlot, hotbarStack);
+                }
             }
         }
     }
@@ -109,26 +139,18 @@ public class AutoPot extends DisablingModule {
                 .anyMatch(player -> player != mc.player && mc.player.getDistance(player) <= range);
     }
 
-    private boolean isBelowMovementThreshold() {
-        double movementThreshold = mc.player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getBaseValue();
-        double horizontalMotion = mc.player.motionX * mc.player.motionX + mc.player.motionZ * mc.player.motionZ;
-        return horizontalMotion <= movementThreshold * movementThreshold;
-    }
-
     private boolean hasSolidBlocksBelowPlayer() {
         int playerX = MathHelper.floor(mc.player.posX);
         int playerZ = MathHelper.floor(mc.player.posZ);
-
         int playerY = MathHelper.floor(mc.player.getEntityBoundingBox().minY);
 
-        // Check for solid blocks at y-1 and y-2
         for (int y = playerY - 1; y >= playerY - 2; y--) {
             Block block = mc.world.getBlockState(new BlockPos(playerX, y, playerZ)).getBlock();
-            if (block != Blocks.AIR && block != Blocks.WATER && block != Blocks.LAVA) {
-                return true;
+            if (block != Blocks.AIR && block != Blocks.WATER && block != Blocks.LAVA && block != Blocks.PORTAL && block != Blocks.END_PORTAL) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     private int findSpeedSplashPotion() {
@@ -167,5 +189,4 @@ public class AutoPot extends DisablingModule {
         mc.playerController.processRightClick(mc.player, mc.world, EnumHand.MAIN_HAND);
         mc.player.inventory.currentItem = lastSlot;
     }
-
 }
